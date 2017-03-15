@@ -3421,7 +3421,7 @@ ngx_http_proxy_init_headers(ngx_conf_t *cf, ngx_http_proxy_loc_conf_t *conf,
     uintptr_t                    *code;
     ngx_uint_t                    i;
     ngx_array_t                   headers_names, headers_merged;
-    ngx_keyval_t                 *src, *s, *h;
+    ngx_keyval_t                 *host, *src, *s, *h;
     ngx_hash_key_t               *hk;
     ngx_hash_init_t               hash;
     ngx_http_script_compile_t     sc;
@@ -3453,10 +3453,32 @@ ngx_http_proxy_init_headers(ngx_conf_t *cf, ngx_http_proxy_loc_conf_t *conf,
         return NGX_ERROR;
     }
 
+    h = default_headers;
+
+    if (h->key.len != sizeof("Host") - 1
+        || ngx_strcasecmp(h->key.data, (u_char *) "Host") != 0)
+    {
+        return NGX_ERROR;
+    }
+
+    host = ngx_array_push(&headers_merged);
+    if (host == NULL) {
+        return NGX_ERROR;
+    }
+
+    *host = *h++;
+
     if (conf->headers_source) {
 
         src = conf->headers_source->elts;
         for (i = 0; i < conf->headers_source->nelts; i++) {
+
+            if (src[i].key.len == sizeof("Host") - 1
+                && ngx_strcasecmp(src[i].key.data, (u_char *) "Host") == 0)
+            {
+                *host = src[i];
+                continue;
+            }
 
             s = ngx_array_push(&headers_merged);
             if (s == NULL) {
@@ -3466,8 +3488,6 @@ ngx_http_proxy_init_headers(ngx_conf_t *cf, ngx_http_proxy_loc_conf_t *conf,
             *s = src[i];
         }
     }
-
-    h = default_headers;
 
     while (h->key.len) {
 
