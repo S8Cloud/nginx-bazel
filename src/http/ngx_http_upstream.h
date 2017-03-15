@@ -226,6 +226,7 @@ typedef struct {
 
 #if (NGX_HTTP_SSL || NGX_COMPAT)
     ngx_ssl_t                       *ssl;
+    ngx_flag_t                       ssl_alpn;
     ngx_flag_t                       ssl_session_reuse;
 
     ngx_http_complex_value_t        *ssl_name;

@@ -13,6 +13,11 @@
 #include <ngx_core.h>
 
 
+#define NGX_HTTP_10_ALPN_ADVERTISE  "\x08http/1.0"
+#define NGX_HTTP_11_ALPN_ADVERTISE  "\x08http/1.1"
+#define NGX_HTTP_NPN_ADVERTISE      NGX_HTTP_11_ALPN_ADVERTISE
+
+
 typedef struct ngx_http_request_s     ngx_http_request_t;
 typedef struct ngx_http_upstream_s    ngx_http_upstream_t;
 typedef struct ngx_http_cache_s       ngx_http_cache_t;

@@ -648,6 +648,29 @@ ngx_ssl_ciphers(ngx_conf_t *cf, ngx_ssl_t *ssl, ngx_str_t *ciphers,
 
 
 ngx_int_t
+ngx_ssl_alpn_protos(ngx_conf_t *cf, ngx_ssl_t *ssl, ngx_str_t *protos)
+{
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+
+    if (SSL_CTX_set_alpn_protos(ssl->ctx, protos->data, protos->len) != 0) {
+        ngx_ssl_error(NGX_LOG_EMERG, ssl->log, 0,
+                      "SSL_CTX_set_alpn_protos() failed");
+        return NGX_ERROR;
+    }
+
+    return NGX_OK;
+
+#else
+
+    ngx_log_error(NGX_LOG_EMERG, cf->log, 0,
+                  "nginx was built with OpenSSL that lacks ALPN support");
+    return NGX_ERROR;
+
+#endif
+}
+
+
+ngx_int_t
 ngx_ssl_client_certificate(ngx_conf_t *cf, ngx_ssl_t *ssl, ngx_str_t *cert,
     ngx_int_t depth)
 {

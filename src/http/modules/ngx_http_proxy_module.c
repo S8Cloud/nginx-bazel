@@ -651,6 +651,13 @@ static ngx_command_t  ngx_http_proxy_commands[] = {
       offsetof(ngx_http_proxy_loc_conf_t, ssl_ciphers),
       NULL },
 
+    { ngx_string("proxy_ssl_alpn"),
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      ngx_conf_set_flag_slot,
+      NGX_HTTP_LOC_CONF_OFFSET,
+      offsetof(ngx_http_proxy_loc_conf_t, upstream.ssl_alpn),
+      NULL },
+
     { ngx_string("proxy_ssl_name"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
       ngx_http_set_complex_value_slot,
@@ -2880,6 +2887,7 @@ ngx_http_proxy_create_loc_conf(ngx_conf_t *cf)
     conf->upstream.intercept_errors = NGX_CONF_UNSET;
 
 #if (NGX_HTTP_SSL)
+    conf->upstream.ssl_alpn = NGX_CONF_UNSET;
     conf->upstream.ssl_session_reuse = NGX_CONF_UNSET;
     conf->upstream.ssl_server_name = NGX_CONF_UNSET;
     conf->upstream.ssl_verify = NGX_CONF_UNSET;
@@ -3211,6 +3219,8 @@ ngx_http_proxy_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
         conf->upstream.ssl_name = prev->upstream.ssl_name;
     }
 
+    ngx_conf_merge_value(conf->upstream.ssl_alpn,
+                              prev->upstream.ssl_alpn, 0);
     ngx_conf_merge_value(conf->upstream.ssl_server_name,
                               prev->upstream.ssl_server_name, 0);
     ngx_conf_merge_value(conf->upstream.ssl_verify,
@@ -4319,6 +4329,7 @@ ngx_http_proxy_lowat_check(ngx_conf_t *cf, void *post, void *data)
 static ngx_int_t
 ngx_http_proxy_set_ssl(ngx_conf_t *cf, ngx_http_proxy_loc_conf_t *plcf)
 {
+    ngx_str_t            alpn;
     ngx_pool_cleanup_t  *cln;
 
     plcf->upstream.ssl = ngx_pcalloc(cf->pool, sizeof(ngx_ssl_t));
@@ -4363,6 +4374,24 @@ ngx_http_proxy_set_ssl(ngx_conf_t *cf, ngx_http_proxy_loc_conf_t *plcf)
         != NGX_OK)
     {
         return NGX_ERROR;
+    }
+
+    if (plcf->upstream.ssl_alpn) {
+
+        switch (plcf->http_version) {
+
+        case NGX_HTTP_VERSION_10:
+            ngx_str_set(&alpn, NGX_HTTP_10_ALPN_ADVERTISE);
+            break;
+
+        case NGX_HTTP_VERSION_11:
+            ngx_str_set(&alpn, NGX_HTTP_11_ALPN_ADVERTISE);
+            break;
+        }
+
+        if (ngx_ssl_alpn_protos(cf, plcf->upstream.ssl, &alpn) != NGX_OK) {
+            return NGX_ERROR;
+        }
     }
 
     if (plcf->upstream.ssl_verify) {
