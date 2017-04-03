@@ -151,6 +151,8 @@ static ngx_int_t ngx_http_upstream_rewrite_set_cookie(ngx_http_request_t *r,
     ngx_table_elt_t *h, ngx_uint_t offset);
 static ngx_int_t ngx_http_upstream_copy_allow_ranges(ngx_http_request_t *r,
     ngx_table_elt_t *h, ngx_uint_t offset);
+static ngx_int_t ngx_http_upstream_copy_trailer(ngx_http_request_t *r,
+    ngx_table_elt_t *h, ngx_uint_t offset);
 
 #if (NGX_HTTP_GZIP || NGX_COMPAT)
 static ngx_int_t ngx_http_upstream_copy_content_encoding(ngx_http_request_t *r,
@@ -310,6 +312,10 @@ static ngx_http_upstream_header_t  ngx_http_upstream_headers_in[] = {
     { ngx_string("X-Accel-Charset"),
                  ngx_http_upstream_process_charset, 0,
                  ngx_http_upstream_copy_header_line, 0, 0 },
+
+    { ngx_string("Trailer"),
+                 ngx_http_upstream_ignore_header_line, 0,
+                 ngx_http_upstream_copy_trailer, 0, 0 },
 
     { ngx_string("Transfer-Encoding"),
                  ngx_http_upstream_process_transfer_encoding, 0,
@@ -5228,6 +5234,29 @@ ngx_http_upstream_copy_allow_ranges(ngx_http_request_t *r,
     *ho = *h;
 
     r->headers_out.accept_ranges = ho;
+
+    return NGX_OK;
+}
+
+
+static ngx_int_t
+ngx_http_upstream_copy_trailer(ngx_http_request_t *r,
+    ngx_table_elt_t *h, ngx_uint_t offset)
+{
+    ngx_table_elt_t  *ho;
+
+    if (!r->upstream->conf->pass_trailers
+        || !r->allow_trailers || !r->expect_trailers)
+    {
+        return NGX_OK;
+    }
+
+    ho = ngx_list_push(&r->headers_out.headers);
+    if (ho == NULL) {
+        return NGX_ERROR;
+    }
+
+    *ho = *h;
 
     return NGX_OK;
 }
