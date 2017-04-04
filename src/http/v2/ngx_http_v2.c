@@ -817,7 +817,7 @@ ngx_http_v2_state_data(ngx_http_v2_connection_t *h2c, u_char *pos, u_char *end)
                                                 NGX_HTTP_V2_PROTOCOL_ERROR);
         }
 
-        h2c->state.length -= h2c->state.padding + 1;
+        h2c->state.length -= 1 + h2c->state.padding;
     }
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, h2c->connection->log, 0,
@@ -942,7 +942,7 @@ ngx_http_v2_state_read_data(ngx_http_v2_connection_t *h2c, u_char *pos,
 
     if (size >= h2c->state.length) {
         size = h2c->state.length;
-        stream->in_closed  = h2c->state.flags & NGX_HTTP_V2_END_STREAM_FLAG;
+        stream->in_closed = h2c->state.flags & NGX_HTTP_V2_END_STREAM_FLAG;
     }
 
     r = stream->request;
@@ -1910,7 +1910,7 @@ ngx_http_v2_state_rst_stream(ngx_http_v2_connection_t *h2c, u_char *pos,
 
     if (node == NULL || node->stream == NULL) {
         ngx_log_debug0(NGX_LOG_DEBUG_HTTP, h2c->connection->log, 0,
-                        "unknown http2 stream");
+                       "unknown http2 stream");
 
         return ngx_http_v2_state_complete(h2c, pos, end);
     }
@@ -2048,6 +2048,7 @@ ngx_http_v2_state_settings_params(ngx_http_v2_connection_t *h2c, u_char *pos,
             break;
 
         case NGX_HTTP_V2_MAX_FRAME_SIZE_SETTING:
+
             if (value > NGX_HTTP_V2_MAX_FRAME_SIZE
                 || value < NGX_HTTP_V2_DEFAULT_FRAME_SIZE)
             {
@@ -3133,7 +3134,7 @@ ngx_http_v2_pseudo_header(ngx_http_request_t *r, ngx_http_v2_header_t *header)
     }
 
     ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
-                  "client sent unknown pseudo header \"%V\"",
+                  "client sent unknown pseudo-header \":%V\"",
                   &header->name);
 
     return NGX_DECLINED;
@@ -3280,14 +3281,14 @@ ngx_http_v2_parse_scheme(ngx_http_request_t *r, ngx_http_v2_header_t *header)
 {
     if (r->schema_start) {
         ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
-                      "client sent duplicate :schema header");
+                      "client sent duplicate :scheme header");
 
         return NGX_DECLINED;
     }
 
     if (header->value.len == 0) {
         ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
-                      "client sent empty :schema header");
+                      "client sent empty :scheme header");
 
         return NGX_DECLINED;
     }
@@ -4194,15 +4195,20 @@ ngx_http_v2_handle_connection_handler(ngx_event_t *rev)
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, rev->log, 0,
                    "http2 handle connection handler");
 
+    c = rev->data;
+    h2c = c->data;
+
+    if (c->error) {
+        ngx_http_v2_finalize_connection(h2c, 0);
+        return;
+    }
+
     rev->handler = ngx_http_v2_read_handler;
 
     if (rev->ready) {
         ngx_http_v2_read_handler(rev);
         return;
     }
-
-    c = rev->data;
-    h2c = c->data;
 
     if (h2c->last_out && ngx_http_v2_send_output_queue(h2c) == NGX_ERROR) {
         ngx_http_v2_finalize_connection(h2c, 0);
@@ -4326,7 +4332,10 @@ ngx_http_v2_finalize_connection(ngx_http_v2_connection_t *h2c,
 
             if (stream->queued) {
                 stream->queued = 0;
+
                 ev = fc->write;
+                ev->active = 0;
+                ev->ready = 1;
 
             } else {
                 ev = fc->read;
