@@ -2002,7 +2002,7 @@ ngx_http_v2_state_settings(ngx_http_v2_connection_t *h2c, u_char *pos,
         return ngx_http_v2_connection_error(h2c, NGX_HTTP_V2_INTERNAL_ERROR);
     }
 
-    ngx_http_v2_queue_blocked_frame(h2c, frame);
+    ngx_http_v2_queue_ordered_frame(h2c, frame);
 
     return ngx_http_v2_state_settings_params(h2c, pos, end);
 }
