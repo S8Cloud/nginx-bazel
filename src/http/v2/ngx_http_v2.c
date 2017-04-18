@@ -1960,8 +1960,6 @@ static u_char *
 ngx_http_v2_state_settings(ngx_http_v2_connection_t *h2c, u_char *pos,
     u_char *end)
 {
-    ngx_http_v2_out_frame_t  *frame;
-
     if (h2c->state.flags == NGX_HTTP_V2_ACK_FLAG) {
 
         if (h2c->state.length != 0) {
@@ -1992,18 +1990,6 @@ ngx_http_v2_state_settings(ngx_http_v2_connection_t *h2c, u_char *pos,
                    "http2 SETTINGS frame params:%uz",
                    h2c->state.length / NGX_HTTP_V2_SETTINGS_PARAM_SIZE);
 
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, h2c->connection->log, 0,
-                   "http2 send SETTINGS frame ack:1");
-
-    frame = ngx_http_v2_get_frame(h2c, NGX_HTTP_V2_SETTINGS_ACK_SIZE,
-                                  NGX_HTTP_V2_SETTINGS_FRAME,
-                                  NGX_HTTP_V2_ACK_FLAG, 0);
-    if (frame == NULL) {
-        return ngx_http_v2_connection_error(h2c, NGX_HTTP_V2_INTERNAL_ERROR);
-    }
-
-    ngx_http_v2_queue_ordered_frame(h2c, frame);
-
     return ngx_http_v2_state_settings_params(h2c, pos, end);
 }
 
@@ -2012,7 +1998,8 @@ static u_char *
 ngx_http_v2_state_settings_params(ngx_http_v2_connection_t *h2c, u_char *pos,
     u_char *end)
 {
-    ngx_uint_t  id, value, adjustment;
+    ngx_uint_t                id, value, adjustment;
+    ngx_http_v2_out_frame_t  *frame;
 
     adjustment = 0;
 
@@ -2115,6 +2102,18 @@ ngx_http_v2_state_settings_params(ngx_http_v2_connection_t *h2c, u_char *pos,
 
         pos += NGX_HTTP_V2_SETTINGS_PARAM_SIZE;
     }
+
+    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, h2c->connection->log, 0,
+                   "http2 send SETTINGS frame ack:1");
+
+    frame = ngx_http_v2_get_frame(h2c, NGX_HTTP_V2_SETTINGS_ACK_SIZE,
+                                  NGX_HTTP_V2_SETTINGS_FRAME,
+                                  NGX_HTTP_V2_ACK_FLAG, 0);
+    if (frame == NULL) {
+        return ngx_http_v2_connection_error(h2c, NGX_HTTP_V2_INTERNAL_ERROR);
+    }
+
+    ngx_http_v2_queue_ordered_frame(h2c, frame);
 
     if (adjustment) {
         if (ngx_http_v2_adjust_windows(h2c, adjustment) != NGX_OK) {
