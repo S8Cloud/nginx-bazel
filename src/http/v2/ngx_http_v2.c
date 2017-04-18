@@ -2012,7 +2012,9 @@ static u_char *
 ngx_http_v2_state_settings_params(ngx_http_v2_connection_t *h2c, u_char *pos,
     u_char *end)
 {
-    ngx_uint_t  id, value;
+    ngx_uint_t  id, value, adjustment;
+
+    adjustment = 0;
 
     while (h2c->state.length) {
         if (end - pos < NGX_HTTP_V2_SETTINGS_PARAM_SIZE) {
@@ -2072,13 +2074,7 @@ ngx_http_v2_state_settings_params(ngx_http_v2_connection_t *h2c, u_char *pos,
                            "http2 SETTINGS frame INITIAL_WINDOW_SIZE:%ui",
                            value);
 
-            if (ngx_http_v2_adjust_windows(h2c, value - h2c->init_window)
-                != NGX_OK)
-            {
-                return ngx_http_v2_connection_error(h2c,
-                                                    NGX_HTTP_V2_INTERNAL_ERROR);
-            }
-
+            adjustment = value - h2c->init_window;
             h2c->init_window = value;
             break;
 
@@ -2118,6 +2114,13 @@ ngx_http_v2_state_settings_params(ngx_http_v2_connection_t *h2c, u_char *pos,
         }
 
         pos += NGX_HTTP_V2_SETTINGS_PARAM_SIZE;
+    }
+
+    if (adjustment) {
+        if (ngx_http_v2_adjust_windows(h2c, adjustment) != NGX_OK) {
+            return ngx_http_v2_connection_error(h2c,
+                                                NGX_HTTP_V2_INTERNAL_ERROR);
+        }
     }
 
     return ngx_http_v2_state_complete(h2c, pos, end);
