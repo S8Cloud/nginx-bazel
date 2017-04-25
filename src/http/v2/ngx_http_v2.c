@@ -2251,6 +2251,44 @@ ngx_http_v2_state_window_update(ngx_http_v2_connection_t *h2c, u_char *pos,
                    "http2 WINDOW_UPDATE frame sid:%ui window:%uz",
                    h2c->state.sid, window);
 
+    if (window == 0) {
+        if (h2c->state.sid == 0) {
+            ngx_log_error(NGX_LOG_INFO, h2c->connection->log, 0,
+                          "client sent WINDOW_UPDATE frame "
+                          "with incorrect window increment 0");
+
+            return ngx_http_v2_connection_error(h2c,
+                                                NGX_HTTP_V2_PROTOCOL_ERROR);
+        }
+
+        ngx_log_error(NGX_LOG_INFO, h2c->connection->log, 0,
+                      "client sent WINDOW_UPDATE frame for stream %ui "
+                      "with incorrect window increment 0", h2c->state.sid);
+
+        node = ngx_http_v2_get_node_by_id(h2c, h2c->state.sid, 0);
+
+        if (node && node->stream) {
+            if (ngx_http_v2_terminate_stream(h2c, node->stream,
+                                             NGX_HTTP_V2_PROTOCOL_ERROR)
+                == NGX_ERROR)
+            {
+                return ngx_http_v2_connection_error(h2c,
+                                                    NGX_HTTP_V2_INTERNAL_ERROR);
+            }
+
+        } else {
+            if (ngx_http_v2_send_rst_stream(h2c, h2c->state.sid,
+                                            NGX_HTTP_V2_PROTOCOL_ERROR)
+                == NGX_ERROR)
+            {
+                return ngx_http_v2_connection_error(h2c,
+                                                    NGX_HTTP_V2_INTERNAL_ERROR);
+            }
+        }
+
+        return ngx_http_v2_state_complete(h2c, pos, end);
+    }
+
     if (h2c->state.sid) {
         node = ngx_http_v2_get_node_by_id(h2c, h2c->state.sid, 0);
 
@@ -2262,22 +2300,6 @@ ngx_http_v2_state_window_update(ngx_http_v2_connection_t *h2c, u_char *pos,
         }
 
         stream = node->stream;
-
-        if (window == 0) {
-            ngx_log_error(NGX_LOG_INFO, h2c->connection->log, 0,
-                          "client sent WINDOW_UPDATE frame for stream %ui "
-                          "with incorrect window increment 0", h2c->state.sid);
-
-            if (ngx_http_v2_terminate_stream(h2c, stream,
-                                             NGX_HTTP_V2_PROTOCOL_ERROR)
-                == NGX_ERROR)
-            {
-                return ngx_http_v2_connection_error(h2c,
-                                                    NGX_HTTP_V2_INTERNAL_ERROR);
-            }
-
-            return ngx_http_v2_state_complete(h2c, pos, end);
-        }
 
         if (window > (size_t) (NGX_HTTP_V2_MAX_WINDOW - stream->send_window)) {
 
@@ -2315,14 +2337,6 @@ ngx_http_v2_state_window_update(ngx_http_v2_connection_t *h2c, u_char *pos,
         }
 
         return ngx_http_v2_state_complete(h2c, pos, end);
-    }
-
-    if (window == 0) {
-        ngx_log_error(NGX_LOG_INFO, h2c->connection->log, 0,
-                      "client sent WINDOW_UPDATE frame "
-                      "with incorrect window increment 0");
-
-        return ngx_http_v2_connection_error(h2c, NGX_HTTP_V2_PROTOCOL_ERROR);
     }
 
     if (window > NGX_HTTP_V2_MAX_WINDOW - h2c->send_window) {
@@ -3604,8 +3618,7 @@ ngx_http_v2_run_request(ngx_http_request_t *r)
 
 
 ngx_int_t
-ngx_http_v2_read_request_body(ngx_http_request_t *r,
-    ngx_http_client_body_handler_pt post_handler)
+ngx_http_v2_read_request_body(ngx_http_request_t *r)
 {
     off_t                      len;
     size_t                     size;
@@ -3618,35 +3631,11 @@ ngx_http_v2_read_request_body(ngx_http_request_t *r,
     ngx_http_v2_connection_t  *h2c;
 
     stream = r->stream;
+    rb = r->request_body;
 
     if (stream->skip_data) {
         r->request_body_no_buffering = 0;
-        post_handler(r);
-        return NGX_OK;
-    }
-
-    rb = ngx_pcalloc(r->pool, sizeof(ngx_http_request_body_t));
-    if (rb == NULL) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
-    }
-
-    /*
-     * set by ngx_pcalloc():
-     *
-     *     rb->bufs = NULL;
-     *     rb->buf = NULL;
-     *     rb->received = 0;
-     *     rb->free = NULL;
-     *     rb->busy = NULL;
-     */
-
-    rb->post_handler = post_handler;
-
-    r->request_body = rb;
-
-    if (r->headers_in.content_length_n < 0 && !r->headers_in.chunked) {
-        r->request_body_no_buffering = 0;
-        post_handler(r);
+        rb->post_handler(r);
         return NGX_OK;
     }
 
