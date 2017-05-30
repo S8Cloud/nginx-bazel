@@ -176,34 +176,42 @@ if [ "$NGX_PLATFORM" != win32 ]; then
     fi
 
 
-    ngx_feature="gcc builtin __sync operations"
-    ngx_feature_name=NGX_HAVE_GCC_ATOMIC
-    ngx_feature_run=yes
-    ngx_feature_incs=
-    ngx_feature_path=
-    ngx_feature_libs=
-    ngx_feature_test="long  n = 0;
-                      if (!__sync_bool_compare_and_swap(&n, 0, 1))
-                          return 1;
-                      if (__sync_fetch_and_add(&n, 1) != 1)
-                          return 1;
-                      if (n != 2)
-                          return 1;
-                      __sync_synchronize();"
-    . $NGX_AUTO/feature
+    if [ "$NGX_CC_NAME" = "sunc" ]; then
+        echo "checking for gcc builtin __sync operations ... disabled"
+    else
+        ngx_feature="gcc builtin __sync operations"
+        ngx_feature_name=NGX_HAVE_GCC_ATOMIC
+        ngx_feature_run=yes
+        ngx_feature_incs=
+        ngx_feature_path=
+        ngx_feature_libs=
+        ngx_feature_test="long  n = 0;
+                          if (!__sync_bool_compare_and_swap(&n, 0, 1))
+                              return 1;
+                          if (__sync_fetch_and_add(&n, 1) != 1)
+                              return 1;
+                          if (n != 2)
+                              return 1;
+                          __sync_synchronize();"
+        . $NGX_AUTO/feature
+    fi
 
 
-    ngx_feature="gcc builtin __atomic operations"
-    ngx_feature_name=NGX_HAVE_GCC_ATOMIC_STORE_AND_LOAD
-    ngx_feature_run=yes
-    ngx_feature_incs=
-    ngx_feature_path=
-    ngx_feature_libs=
-    ngx_feature_test="long  n = 0;
-                      __atomic_store_n(&n, 1, __ATOMIC_RELEASE);
-                      if (__atomic_load_n(&n, __ATOMIC_ACQUIRE) != 1)
-                          return 1"
-    . $NGX_AUTO/feature
+    if [ "$NGX_CC_NAME" = "sunc" ]; then
+        echo "checking for gcc builtin __atomic operations ... disabled"
+    else
+        ngx_feature="gcc builtin __atomic operations"
+        ngx_feature_name=NGX_HAVE_GCC_ATOMIC_STORE_AND_LOAD
+        ngx_feature_run=yes
+        ngx_feature_incs=
+        ngx_feature_path=
+        ngx_feature_libs=
+        ngx_feature_test="long  n = 0;
+                          __atomic_store_n(&n, 1, __ATOMIC_RELEASE);
+                          if (__atomic_load_n(&n, __ATOMIC_ACQUIRE) != 1)
+                              return 1"
+        . $NGX_AUTO/feature
+    fi
 
 
     if [ "$NGX_CC_NAME" = "ccc" ]; then
@@ -220,7 +228,7 @@ if [ "$NGX_PLATFORM" != win32 ]; then
                           var(0, buf, \"%d\", 1);
                           if (buf[0] != '1') return 1"
         . $NGX_AUTO/feature
-     fi
+    fi
 
 
     ngx_feature="gcc variadic macros"
