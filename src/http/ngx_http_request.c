@@ -29,8 +29,6 @@ static ngx_int_t ngx_http_process_connection(ngx_http_request_t *r,
     ngx_table_elt_t *h, ngx_uint_t offset);
 static ngx_int_t ngx_http_process_user_agent(ngx_http_request_t *r,
     ngx_table_elt_t *h, ngx_uint_t offset);
-static ngx_int_t ngx_http_process_te(ngx_http_request_t *r,
-    ngx_table_elt_t *h, ngx_uint_t offset);
 
 static ngx_int_t ngx_http_validate_host(ngx_str_t *host, ngx_pool_t *pool,
     ngx_uint_t alloc);
@@ -129,10 +127,6 @@ ngx_http_header_t  ngx_http_headers_in[] = {
     { ngx_string("If-Range"),
                  offsetof(ngx_http_headers_in_t, if_range),
                  ngx_http_process_unique_header_line },
-
-    { ngx_string("TE"),
-                 offsetof(ngx_http_headers_in_t, te),
-                 ngx_http_process_te },
 
     { ngx_string("Transfer-Encoding"),
                  offsetof(ngx_http_headers_in_t, transfer_encoding),
@@ -1698,7 +1692,7 @@ ngx_http_process_connection(ngx_http_request_t *r, ngx_table_elt_t *h,
 
 #if (NGX_HTTP_V2)
 
-    if (r->http_version >= NGX_HTTP_VERSION_20) {
+    if (r->stream) {
         ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
                       "client sent HTTP/2 request with \"Connection\" header");
 
@@ -1785,63 +1779,6 @@ ngx_http_process_user_agent(ngx_http_request_t *r, ngx_table_elt_t *h,
 
         } else if (ngx_strstrn(user_agent, "Konqueror", 9 - 1)) {
             r->headers_in.konqueror = 1;
-        }
-    }
-
-    return NGX_OK;
-}
-
-
-static ngx_int_t
-ngx_http_process_te(ngx_http_request_t *r, ngx_table_elt_t *h,
-    ngx_uint_t offset)
-{
-    u_char  *p;
-
-    if (ngx_http_process_multi_header_lines(r, h, offset) != NGX_OK) {
-        return NGX_ERROR;
-    }
-
-    if (r->http_version < NGX_HTTP_VERSION_11) {
-        return NGX_OK;
-    }
-
-    if (h->value.len == sizeof("trailers") - 1
-        && ngx_memcmp(h->value.data, "trailers", sizeof("trailers") - 1) == 0)
-    {
-        r->allow_trailers = 1;
-        return NGX_OK;
-    }
-
-#if (NGX_HTTP_V2)
-
-    if (r->http_version >= NGX_HTTP_VERSION_20) {
-        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
-                      "client sent HTTP/2 request with invalid value \"%V\" "
-                      "in \"TE\" header", &h->value);
-
-        ngx_http_finalize_request(r, NGX_HTTP_BAD_REQUEST);
-        return NGX_ERROR;
-    }
-
-#endif
-
-    if (h->value.len < sizeof("trailers") - 1) {
-        return NGX_OK;
-    }
-
-    p = ngx_strcasestrn(h->value.data, "trailers", sizeof("trailers") - 2);
-    if (p == NULL) {
-        return NGX_OK;
-    }
-
-    if (p == h->value.data || *(p - 1) == ',' || *(p - 1) == ' ') {
-
-        p += sizeof("trailers") - 1;
-
-        if (p == h->value.data + h->value.len || *p == ',' || *p == ' ') {
-            r->allow_trailers = 1;
-            return NGX_OK;
         }
     }
 

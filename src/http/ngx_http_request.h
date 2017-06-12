@@ -196,7 +196,6 @@ typedef struct {
     ngx_table_elt_t                  *range;
     ngx_table_elt_t                  *if_range;
 
-    ngx_array_t                       te;
     ngx_table_elt_t                  *transfer_encoding;
     ngx_table_elt_t                  *expect;
     ngx_table_elt_t                  *upgrade;
@@ -516,7 +515,6 @@ struct ngx_http_request_s {
     unsigned                          pipeline:1;
     unsigned                          chunked:1;
     unsigned                          header_only:1;
-    unsigned                          allow_trailers:1;
     unsigned                          expect_trailers:1;
     unsigned                          keepalive:1;
     unsigned                          lingering_close:1;

@@ -2766,7 +2766,7 @@ ngx_http_upstream_process_trailers(ngx_http_request_t *r, ngx_http_upstream_t *u
     ngx_list_part_t  *part;
     ngx_table_elt_t  *h, *ho;
 
-    if (!u->conf->pass_trailers || !r->allow_trailers || !r->expect_trailers) {
+    if (!r->expect_trailers || !u->conf->pass_trailers) {
         return NGX_OK;
     }
 
@@ -5199,9 +5199,7 @@ ngx_http_upstream_copy_trailer(ngx_http_request_t *r,
 {
     ngx_table_elt_t  *ho;
 
-    if (!r->upstream->conf->pass_trailers
-        || !r->allow_trailers || !r->expect_trailers)
-    {
+    if (!r->expect_trailers || !r->upstream->conf->pass_trailers) {
         return NGX_OK;
     }
 
