@@ -1150,8 +1150,8 @@ ngx_http_proxy_create_key(ngx_http_request_t *r)
 static ngx_int_t
 ngx_http_proxy_create_request(ngx_http_request_t *r)
 {
-    size_t                        len, uri_len, loc_len, body_len;
-    size_t                        key_len, val_len;
+    size_t                        len, uri_len, loc_len, body_len,
+                                  key_len, val_len;
     uintptr_t                     escape;
     ngx_buf_t                    *b;
     ngx_str_t                     method;
@@ -1266,18 +1266,20 @@ ngx_http_proxy_create_request(ngx_http_request_t *r)
     le.flushed = 1;
 
     while (*(uintptr_t *) le.ip) {
+
         lcode = *(ngx_http_script_len_code_pt *) le.ip;
         key_len = lcode(&le);
 
         for (val_len = 0; *(uintptr_t *) le.ip; val_len += lcode(&le)) {
             lcode = *(ngx_http_script_len_code_pt *) le.ip;
         }
+        le.ip += sizeof(uintptr_t);
 
-        if (val_len) {
-            len += key_len + sizeof(": ") - 1 + val_len + sizeof(CRLF) - 1;
+        if (val_len == 0) {
+            continue;
         }
 
-        le.ip += sizeof(uintptr_t);
+        len += key_len + sizeof(": ") - 1 + val_len + sizeof(CRLF) - 1;
     }
 
 
@@ -1377,34 +1379,41 @@ ngx_http_proxy_create_request(ngx_http_request_t *r)
     le.ip = headers->lengths->elts;
 
     while (*(uintptr_t *) le.ip) {
+
         lcode = *(ngx_http_script_len_code_pt *) le.ip;
         (void) lcode(&le);
 
         for (val_len = 0; *(uintptr_t *) le.ip; val_len += lcode(&le)) {
             lcode = *(ngx_http_script_len_code_pt *) le.ip;
         }
-
         le.ip += sizeof(uintptr_t);
 
-        e.skip = (val_len == 0) ? 1 : 0;
+        if (val_len == 0) {
+            e.skip = 1;
+
+            while (*(uintptr_t *) e.ip) {
+                code = *(ngx_http_script_code_pt *) e.ip;
+                code((ngx_http_script_engine_t *) &e);
+            }
+            e.ip += sizeof(uintptr_t);
+
+            e.skip = 0;
+
+            continue;
+        }
 
         code = *(ngx_http_script_code_pt *) e.ip;
         code((ngx_http_script_engine_t *) &e);
 
-        if (!e.skip) {
-            *e.pos++ = ':'; *e.pos++ = ' ';
-        }
+        *e.pos++ = ':'; *e.pos++ = ' ';
 
         while (*(uintptr_t *) e.ip) {
             code = *(ngx_http_script_code_pt *) e.ip;
             code((ngx_http_script_engine_t *) &e);
         }
-
-        if (!e.skip) {
-            *e.pos++ = CR; *e.pos++ = LF;
-        }
-
         e.ip += sizeof(uintptr_t);
+
+        *e.pos++ = CR; *e.pos++ = LF;
     }
 
     b->last = e.pos;
@@ -3552,7 +3561,7 @@ ngx_http_proxy_init_headers(ngx_conf_t *cf, ngx_http_proxy_loc_conf_t *conf,
 
         size = (sizeof(ngx_http_script_copy_code_t)
                 + src[i].key.len + sizeof(uintptr_t) - 1)
-                & ~(sizeof(uintptr_t) - 1);
+               & ~(sizeof(uintptr_t) - 1);
 
         copy = ngx_array_push_n(headers->values, size);
         if (copy == NULL) {
@@ -3565,44 +3574,16 @@ ngx_http_proxy_init_headers(ngx_conf_t *cf, ngx_http_proxy_loc_conf_t *conf,
         p = (u_char *) copy + sizeof(ngx_http_script_copy_code_t);
         ngx_memcpy(p, src[i].key.data, src[i].key.len);
 
-        if (ngx_http_script_variables_count(&src[i].value) == 0) {
-            copy = ngx_array_push_n(headers->lengths,
-                                    sizeof(ngx_http_script_copy_code_t));
-            if (copy == NULL) {
-                return NGX_ERROR;
-            }
+        ngx_memzero(&sc, sizeof(ngx_http_script_compile_t));
 
-            copy->code = (ngx_http_script_code_pt)
-                                                 ngx_http_script_copy_len_code;
-            copy->len = src[i].value.len;
+        sc.cf = cf;
+        sc.source = &src[i].value;
+        sc.flushes = &headers->flushes;
+        sc.lengths = &headers->lengths;
+        sc.values = &headers->values;
 
-            size = (sizeof(ngx_http_script_copy_code_t)
-                    + src[i].value.len + sizeof(uintptr_t) - 1)
-                    & ~(sizeof(uintptr_t) - 1);
-
-            copy = ngx_array_push_n(headers->values, size);
-            if (copy == NULL) {
-                return NGX_ERROR;
-            }
-
-            copy->code = ngx_http_script_copy_code;
-            copy->len = src[i].value.len;
-
-            p = (u_char *) copy + sizeof(ngx_http_script_copy_code_t);
-            ngx_memcpy(p, src[i].value.data, src[i].value.len);
-
-        } else {
-            ngx_memzero(&sc, sizeof(ngx_http_script_compile_t));
-
-            sc.cf = cf;
-            sc.source = &src[i].value;
-            sc.flushes = &headers->flushes;
-            sc.lengths = &headers->lengths;
-            sc.values = &headers->values;
-
-            if (ngx_http_script_compile(&sc) != NGX_OK) {
-                return NGX_ERROR;
-            }
+        if (ngx_http_script_compile(&sc) != NGX_OK) {
+            return NGX_ERROR;
         }
 
         code = ngx_array_push_n(headers->lengths, sizeof(uintptr_t));
