@@ -11,6 +11,9 @@
 #include <ngx_http_v2_module.h>
 
 
+#define NGX_HTTP_V2_MAX_STREAMS  (1U << 30)
+
+
 static ngx_int_t ngx_http_v2_add_variables(ngx_conf_t *cf);
 
 static ngx_int_t ngx_http_v2_variable(ngx_http_request_t *r,
@@ -355,7 +358,8 @@ ngx_http_v2_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_uint_value(conf->concurrent_streams,
                               prev->concurrent_streams, 128);
-    ngx_conf_merge_uint_value(conf->max_requests, prev->max_requests, 1000);
+    ngx_conf_merge_uint_value(conf->max_requests, prev->max_requests,
+                              NGX_HTTP_V2_MAX_STREAMS);
 
     ngx_conf_merge_size_value(conf->max_field_size, prev->max_field_size,
                               4096);
