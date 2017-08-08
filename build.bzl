@@ -482,7 +482,7 @@ genrule(
 
 pkg_tar(
     name = "debian_etc_nginx",
-    files = [
+    srcs = [
         "{nginx}:config_includes",
     ],
     mode = "0644",
@@ -491,7 +491,7 @@ pkg_tar(
 
 pkg_tar(
     name = "debian_usr_share_nginx_html",
-    files = [
+    srcs = [
         "{nginx}:html_files",
     ],
     mode = "0644",
@@ -500,7 +500,7 @@ pkg_tar(
 
 pkg_tar(
     name = "debian_var",
-    files = [
+    srcs = [
         "var/cache/nginx/.empty",
         "var/log/nginx/.empty",
     ],
@@ -512,7 +512,7 @@ pkg_tar(
 _PKGOSS_BUILD_FILE_TAIL = """
 pkg_tar(
     name = "debian_overlay",
-    files = [
+    srcs = [
         "etc/default/nginx",
         "etc/init.d/nginx",
         "etc/logrotate.d/nginx",
