@@ -386,6 +386,7 @@ cc_library(
         "src/http/modules/ngx_http_ssl_module.c",
         "src/http/modules/ngx_http_ssl_module.h",
         "src/http/modules/ngx_http_static_module.c",
+        "src/http/modules/ngx_http_try_files_module.c",
         "src/http/modules/ngx_http_upstream_zone_module.c",
         "src/http/ngx_http.c",
         "src/http/ngx_http_cache.h",
@@ -723,6 +724,21 @@ cc_library(
     copts = nginx_copts,
     defines = [
         "NGX_HTTP_MEMCACHED",
+    ],
+    deps = [
+        ":core",
+        ":http",
+    ],
+)
+
+cc_library(
+    name = "http_mirror",
+    srcs = [
+        "src/http/modules/ngx_http_mirror_module.c",
+    ],
+    copts = nginx_copts,
+    defines = [
+        "NGX_HTTP_MIRROR",
     ],
     deps = [
         ":core",
@@ -1356,6 +1372,7 @@ cc_binary(
         ":http_limit_req",
         ":http_map",
         ":http_memcached",
+        ":http_mirror",
         ":http_mp4",
         ":http_proxy",
         ":http_random_index",
@@ -1468,5 +1485,5 @@ pkg_deb(
     preinst = "@nginx_pkgoss//:debian_preinst",
     prerm = "@nginx_pkgoss//:debian_prerm",
     section = "httpd",
-    version = "1.13.3",
+    version = "1.13.4",
 )
