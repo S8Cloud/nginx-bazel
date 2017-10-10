@@ -13,8 +13,8 @@
 #define NGINX_NAME         "nginx"
 #endif
 
-#define nginx_version      1013005
-#define NGINX_VERSION      "1.13.5"
+#define nginx_version      1013006
+#define NGINX_VERSION      "1.13.6"
 #define NGINX_VER          NGINX_NAME "/" NGINX_VERSION
 
 #ifdef NGX_BUILD
