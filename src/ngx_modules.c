@@ -123,6 +123,9 @@ extern ngx_module_t  ngx_http_uwsgi_module;
 #if (NGX_HTTP_SCGI)
 extern ngx_module_t  ngx_http_scgi_module;
 #endif
+#if (NGX_HTTP_GRPC)
+extern ngx_module_t  ngx_http_grpc_module;
+#endif
 #if 0
 extern ngx_module_t  ngx_http_perl_module;
 #endif
@@ -402,6 +405,9 @@ ngx_module_t *ngx_modules[] = {
 #endif
 #if (NGX_HTTP_SCGI)
     &ngx_http_scgi_module,
+#endif
+#if (NGX_HTTP_GRPC)
+    &ngx_http_grpc_module,
 #endif
 #if 0
     &ngx_http_perl_module,
@@ -684,6 +690,9 @@ char *ngx_module_names[] = {
 #endif
 #if (NGX_HTTP_SCGI)
     "ngx_http_scgi_module",
+#endif
+#if (NGX_HTTP_GRPC)
+    "ngx_http_grpc_module",
 #endif
 #if 0
     "ngx_http_perl_module",
@@ -1009,6 +1018,9 @@ ngx_show_configure_options(void)
 #endif
 #if !(NGX_HTTP_GEO)
     ngx_write_stderr(" --without-http_geo_module");
+#endif
+#if !(NGX_HTTP_GRPC)
+    ngx_write_stderr(" --without-http_grpc_module");
 #endif
 #if !(NGX_HTTP_GZIP_FILTER)
     ngx_write_stderr(" --without-http_gzip_module");

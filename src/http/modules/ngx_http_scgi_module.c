@@ -1236,10 +1236,10 @@ ngx_http_scgi_create_loc_conf(ngx_conf_t *cf)
 
     conf->upstream.intercept_errors = NGX_CONF_UNSET;
 
-    /* the hardcoded values */
+    /* "scgi_cyclic_temp_file" is disabled */
     conf->upstream.cyclic_temp_file = 0;
+
     conf->upstream.change_buffering = 1;
-    conf->upstream.pass_trailers = 0;
 
     ngx_str_set(&conf->upstream.module, "scgi");
 

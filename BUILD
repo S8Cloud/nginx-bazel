@@ -412,6 +412,7 @@ cc_library(
         "src/http/ngx_http_write_filter_module.c",
         "src/http/v2/ngx_http_v2.c",
         "src/http/v2/ngx_http_v2.h",
+        "src/http/v2/ngx_http_v2_encode.c",
         "src/http/v2/ngx_http_v2_filter_module.c",
         "src/http/v2/ngx_http_v2_huff_decode.c",
         "src/http/v2/ngx_http_v2_huff_encode.c",
@@ -617,6 +618,21 @@ cc_library(
     copts = nginx_copts,
     defines = [
         "NGX_HTTP_GEO",
+    ],
+    deps = [
+        ":core",
+        ":http",
+    ],
+)
+
+cc_library(
+    name = "http_grpc",
+    srcs = [
+        "src/http/modules/ngx_http_grpc_module.c",
+    ],
+    copts = nginx_copts,
+    defines = [
+        "NGX_HTTP_GRPC",
     ],
     deps = [
         ":core",
@@ -1365,6 +1381,7 @@ cc_binary(
         ":http_fastcgi",
         ":http_flv",
         ":http_geo",
+        ":http_grpc",
         ":http_gunzip",
         ":http_gzip_filter",
         ":http_gzip_static",
@@ -1485,5 +1502,5 @@ pkg_deb(
     preinst = "@nginx_pkgoss//:debian_preinst",
     prerm = "@nginx_pkgoss//:debian_prerm",
     section = "httpd",
-    version = "1.13.9",
+    version = "1.13.10",
 )
