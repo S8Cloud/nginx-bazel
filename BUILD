@@ -248,6 +248,7 @@ cc_library(
         "src/event/ngx_event_posted.h",
         "src/event/ngx_event_timer.c",
         "src/event/ngx_event_timer.h",
+        "src/event/ngx_event_udp.c",
         "src/os/unix/ngx_alloc.c",
         "src/os/unix/ngx_alloc.h",
         "src/os/unix/ngx_atomic.h",
@@ -1502,5 +1503,5 @@ pkg_deb(
     preinst = "@nginx_pkgoss//:debian_preinst",
     prerm = "@nginx_pkgoss//:debian_prerm",
     section = "httpd",
-    version = "1.13.12",
+    version = "1.15.0",
 )
