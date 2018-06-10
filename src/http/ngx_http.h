@@ -88,6 +88,12 @@ void ngx_http_init_connection(ngx_connection_t *c);
 void ngx_http_close_connection(ngx_connection_t *c);
 
 #if (NGX_HTTP_SSL && defined SSL_CTRL_SET_TLSEXT_HOSTNAME)
+#if defined(OPENSSL_IS_BORINGSSL)
+enum ssl_select_cert_result_t ngx_http_ssl_client_hello(
+    const SSL_CLIENT_HELLO *client_hello);
+#elif defined(SSL_CLIENT_HELLO_CB)
+int ngx_http_ssl_client_hello(ngx_ssl_conn_t *ssl_conn, int *ad, void *arg);
+#endif
 int ngx_http_ssl_servername(ngx_ssl_conn_t *ssl_conn, int *ad, void *arg);
 #endif
 

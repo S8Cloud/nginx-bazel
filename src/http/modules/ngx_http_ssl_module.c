@@ -682,6 +682,21 @@ ngx_http_ssl_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
 #ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
 
+    /*
+     * Install early ClientHello callback to allow configuration of available
+     * TLS protocol versions on a per server basis, which isn't possible with
+     * the regular callback.
+     *
+     * NOTE: This callback is installed in addition to the regular callback,
+     * which is going to be called to acknowledge requested server name.
+     */
+
+#if defined(OPENSSL_IS_BORINGSSL)
+    SSL_CTX_set_select_certificate_cb(conf->ssl.ctx, ngx_http_ssl_client_hello);
+#elif defined(SSL_CLIENT_HELLO_CB)
+    SSL_CTX_set_client_hello_cb(conf->ssl.ctx, ngx_http_ssl_client_hello, NULL);
+#endif
+
     if (SSL_CTX_set_tlsext_servername_callback(conf->ssl.ctx,
                                                ngx_http_ssl_servername)
         == 0)
