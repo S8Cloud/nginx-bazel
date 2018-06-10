@@ -899,7 +899,7 @@ ngx_http_ssl_servername(ngx_ssl_conn_t *ssl_conn, int *ad, void *arg)
 
     c->ssl->buffer_size = sscf->buffer_size;
 
-    if (sscf->ssl.ctx) {
+    if (sscf->ssl.ctx && sscf->ssl.ctx != SSL_get_SSL_CTX(ssl_conn)) {
         SSL_set_SSL_CTX(ssl_conn, sscf->ssl.ctx);
 
         /*
