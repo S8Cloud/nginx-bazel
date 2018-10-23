@@ -1039,6 +1039,21 @@ cc_library(
 )
 
 cc_library(
+    name = "http_upstream_random",
+    srcs = [
+        "src/http/modules/ngx_http_upstream_random_module.c",
+    ],
+    copts = nginx_copts,
+    defines = [
+        "NGX_HTTP_UPSTREAM_RANDOM",
+    ],
+    deps = [
+        ":core",
+        ":http",
+    ],
+)
+
+cc_library(
     name = "http_userid",
     srcs = [
         "src/http/modules/ngx_http_userid_filter_module.c",
@@ -1353,6 +1368,21 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "stream_upstream_random",
+    srcs = [
+        "src/stream/ngx_stream_upstream_random_module.c",
+    ],
+    copts = nginx_copts,
+    defines = [
+        "NGX_STREAM_UPSTREAM_RANDOM",
+    ],
+    deps = [
+        ":core",
+        ":stream",
+    ],
+)
+
 filegroup(
     name = "modules",
     srcs = [
@@ -1408,6 +1438,7 @@ cc_binary(
         ":http_upstream_ip_hash",
         ":http_upstream_keepalive",
         ":http_upstream_least_conn",
+        ":http_upstream_random",
         ":http_userid",
         ":http_uwsgi",
         ":mail",
@@ -1425,6 +1456,7 @@ cc_binary(
         ":stream_ssl_preread",
         ":stream_upstream_hash",
         ":stream_upstream_least_conn",
+        ":stream_upstream_random",
         "@ngx_brotli//:http_brotli_filter",
         "@ngx_brotli//:http_brotli_static",
     ],
@@ -1503,5 +1535,5 @@ pkg_deb(
     preinst = "@nginx_pkgoss//:debian_preinst",
     prerm = "@nginx_pkgoss//:debian_prerm",
     section = "httpd",
-    version = "1.15.0",
+    version = "1.15.1",
 )
