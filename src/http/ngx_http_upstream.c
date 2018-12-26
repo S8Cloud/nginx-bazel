@@ -162,8 +162,8 @@ static ngx_int_t ngx_http_upstream_status_variable(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data);
 static ngx_int_t ngx_http_upstream_response_time_variable(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data);
-static ngx_int_t ngx_http_upstream_bytes_variable(ngx_http_request_t *r,
-    ngx_http_variable_value_t *v, uintptr_t data);
+static ngx_int_t ngx_http_upstream_response_length_variable(
+    ngx_http_request_t *r, ngx_http_variable_value_t *v, uintptr_t data);
 static ngx_int_t ngx_http_upstream_header_variable(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data);
 static ngx_int_t ngx_http_upstream_trailer_variable(ngx_http_request_t *r,
@@ -402,15 +402,15 @@ static ngx_http_variable_t  ngx_http_upstream_vars[] = {
       NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
     { ngx_string("upstream_response_length"), NULL,
-      ngx_http_upstream_bytes_variable, 0,
+      ngx_http_upstream_response_length_variable, 0,
       NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
     { ngx_string("upstream_bytes_received"), NULL,
-      ngx_http_upstream_bytes_variable, 1,
+      ngx_http_upstream_response_length_variable, 1,
       NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
     { ngx_string("upstream_bytes_sent"), NULL,
-      ngx_http_upstream_bytes_variable, 2,
+      ngx_http_upstream_response_length_variable, 2,
       NGX_HTTP_VAR_NOCACHEABLE, 0 },
 
 #if (NGX_HTTP_CACHE)
@@ -4142,11 +4142,11 @@ ngx_http_upstream_next(ngx_http_request_t *r, ngx_http_upstream_t *u,
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http next upstream, %xi", ft_type);
 
-    if (u->state && u->state->bytes_sent == 0 && u->peer.connection) {
-        u->state->bytes_sent = u->peer.connection->sent;
-    }
-
     if (u->peer.sockaddr) {
+
+        if (u->peer.connection) {
+            u->state->bytes_sent = u->peer.connection->sent;
+        }
 
         if (ft_type == NGX_HTTP_UPSTREAM_FT_HTTP_403
             || ft_type == NGX_HTTP_UPSTREAM_FT_HTTP_404)
@@ -4332,7 +4332,7 @@ ngx_http_upstream_finalize_request(ngx_http_request_t *r,
             u->state->response_length = u->pipe->read_length;
         }
 
-        if (u->state->bytes_sent == 0 && u->peer.connection) {
+        if (u->peer.connection) {
             u->state->bytes_sent = u->peer.connection->sent;
         }
     }
@@ -5484,7 +5484,7 @@ ngx_http_upstream_response_time_variable(ngx_http_request_t *r,
 
 
 static ngx_int_t
-ngx_http_upstream_bytes_variable(ngx_http_request_t *r,
+ngx_http_upstream_response_length_variable(ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data)
 {
     u_char                     *p;
@@ -5515,11 +5515,11 @@ ngx_http_upstream_bytes_variable(ngx_http_request_t *r,
 
     for ( ;; ) {
 
-        if (data == 2) {
-            p = ngx_sprintf(p, "%O", state[i].bytes_sent);
-
-        } else if (data == 1) {
+        if (data == 1) {
             p = ngx_sprintf(p, "%O", state[i].bytes_received);
+
+        } else if (data == 2) {
+            p = ngx_sprintf(p, "%O", state[i].bytes_sent);
 
         } else {
             p = ngx_sprintf(p, "%O", state[i].response_length);

@@ -663,7 +663,7 @@ def nginx_repositories_pkgoss(nginx):
         name = "nginx_pkgoss",
         build_file_content = _PKGOSS_BUILD_FILE.format(nginx = nginx) +
                              _PKGOSS_BUILD_FILE_TAIL,
-        commit = "a0a043cd5bc6ce17124507e4a6241be72c7eaeaa",  # nginx-1.15.7
+        commit = "2456bf617acaa11b06c11481082797909b300f45",  # nginx-1.15.8
         remote = "https://nginx.googlesource.com/nginx-pkgoss",
     )
 
