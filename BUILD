@@ -1500,10 +1500,10 @@ pkg_tar(
 
 pkg_tar(
     name = "nginx-google-data",
-    extension = "tar.gz",
     srcs = [
         "usr/share/doc/nginx-google/copyright",
     ],
+    extension = "tar.gz",
     mode = "0644",
     strip_prefix = "/",
     deps = [

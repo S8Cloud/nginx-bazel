@@ -22,6 +22,13 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+load(
+    "@bazel_tools//tools/build_defs/repo:git.bzl",
+    "git_repository",
+    "new_git_repository",
+)
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
 _common_copts = [
     "-fno-common",
     "-fvisibility=hidden",
@@ -600,7 +607,7 @@ cc_library(
 """
 
 def nginx_repositories_boringssl(bind):
-    native.git_repository(
+    git_repository(
         name = "boringssl",
         commit = "5b8bd1ba221804c81c8a92c6d1d353ef43a851ab",  # 2018-12-14
         remote = "https://boringssl.googlesource.com/boringssl",
@@ -609,16 +616,16 @@ def nginx_repositories_boringssl(bind):
     if bind:
         native.bind(
             name = "boringssl_crypto",
-            actual = "@boringssl//:crypto"
+            actual = "@boringssl//:crypto",
         )
 
         native.bind(
             name = "boringssl_ssl",
-            actual = "@boringssl//:ssl"
+            actual = "@boringssl//:ssl",
         )
 
 def nginx_repositories_brotli(bind):
-    native.git_repository(
+    git_repository(
         name = "org_brotli",
         commit = "222564a95d9ab58865a096b8d9f7324ea5f2e03e",  # 2016-12-02
         remote = "https://github.com/google/brotli.git",
@@ -627,16 +634,16 @@ def nginx_repositories_brotli(bind):
     if bind:
         native.bind(
             name = "brotli_enc",
-            actual = "@org_brotli//:brotlienc"
+            actual = "@org_brotli//:brotlienc",
         )
 
         native.bind(
             name = "brotli_dec",
-            actual = "@org_brotli//:brotlidec"
+            actual = "@org_brotli//:brotlidec",
         )
 
 def nginx_repositories_ngx_brotli(nginx):
-    native.new_git_repository(
+    new_git_repository(
         name = "ngx_brotli",
         build_file_content = _NGX_BROTLI_BUILD_FILE.format(nginx = nginx),
         commit = "5ead1ada782b18c7b38a3c2798a40a334801c7b6",  # 2016-12-05
@@ -644,7 +651,7 @@ def nginx_repositories_ngx_brotli(nginx):
     )
 
 def nginx_repositories_pcre(bind):
-    native.new_http_archive(
+    http_archive(
         name = "nginx_pcre",
         build_file_content = _PCRE_BUILD_FILE,
         sha256 = "69acbc2fbdefb955d42a4c606dfde800c2885711d2979e356c0636efde9ec3b5",
@@ -655,11 +662,11 @@ def nginx_repositories_pcre(bind):
     if bind:
         native.bind(
             name = "pcre",
-            actual = "@nginx_pcre//:pcre"
+            actual = "@nginx_pcre//:pcre",
         )
 
 def nginx_repositories_pkgoss(nginx):
-    native.new_git_repository(
+    new_git_repository(
         name = "nginx_pkgoss",
         build_file_content = _PKGOSS_BUILD_FILE.format(nginx = nginx) +
                              _PKGOSS_BUILD_FILE_TAIL,
@@ -668,7 +675,7 @@ def nginx_repositories_pkgoss(nginx):
     )
 
 def nginx_repositories_zlib(bind):
-    native.new_git_repository(
+    new_git_repository(
         name = "nginx_zlib",
         build_file_content = _ZLIB_BUILD_FILE,
         commit = "cacf7f1d4e3d44d871b605da3b647f07d718623f",  # v1.2.11
@@ -678,7 +685,7 @@ def nginx_repositories_zlib(bind):
     if bind:
         native.bind(
             name = "zlib",
-            actual = "@nginx_zlib//:zlib"
+            actual = "@nginx_zlib//:zlib",
         )
 
 def nginx_repositories(bind = False, nginx = "@nginx//", ngx_brotli = False):
