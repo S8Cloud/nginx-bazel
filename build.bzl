@@ -670,7 +670,7 @@ def nginx_repositories_pkgoss(nginx):
         name = "nginx_pkgoss",
         build_file_content = _PKGOSS_BUILD_FILE.format(nginx = nginx) +
                              _PKGOSS_BUILD_FILE_TAIL,
-        commit = "348751c342d781e1f6e05459f34992312ebccaf8",  # nginx-1.15.8
+        commit = "f6a718b01fb49e07a7a2c206c1e5391a31be5248",  # nginx-1.15.8
         remote = "https://github.com/S8Cloud/pkg-oss.git",
     )
 
