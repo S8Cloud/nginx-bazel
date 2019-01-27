@@ -144,8 +144,8 @@ genrule(
           " --error-log-path=/var/log/nginx/error.log" +
           " --pid-path=/var/run/nginx.pid" +
           " --lock-path=/var/run/nginx.lock" +
-          " --user=nginx" +
-          " --group=nginx" +
+          " --user=www-data" +
+          " --group=www-data" +
           " --http-log-path=/var/log/nginx/access.log" +
           " --http-client-body-temp-path=/var/cache/nginx/client_temp" +
           " --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp" +

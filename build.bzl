@@ -609,8 +609,8 @@ cc_library(
 def nginx_repositories_boringssl(bind):
     git_repository(
         name = "boringssl",
-        commit = "5b8bd1ba221804c81c8a92c6d1d353ef43a851ab",  # 2018-12-14
-        remote = "https://boringssl.googlesource.com/boringssl",
+        commit = "02b64cfa1a03a3319ae07216965362003ec715d7",  # Latest Stable
+        remote = "https://github.com/S8Cloud/boringssl.git",
     )
 
     if bind:
@@ -670,8 +670,8 @@ def nginx_repositories_pkgoss(nginx):
         name = "nginx_pkgoss",
         build_file_content = _PKGOSS_BUILD_FILE.format(nginx = nginx) +
                              _PKGOSS_BUILD_FILE_TAIL,
-        commit = "2456bf617acaa11b06c11481082797909b300f45",  # nginx-1.15.8
-        remote = "https://nginx.googlesource.com/nginx-pkgoss",
+        commit = "348751c342d781e1f6e05459f34992312ebccaf8",  # nginx-1.15.8
+        remote = "https://github.com/S8Cloud/pkg-oss.git",
     )
 
 def nginx_repositories_zlib(bind):
