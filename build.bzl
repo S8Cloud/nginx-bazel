@@ -609,8 +609,8 @@ cc_library(
 def nginx_repositories_boringssl(bind):
     git_repository(
         name = "boringssl",
-        commit = "939d83e12ef5680a31564ea442ed03285117e6f9",  # Latest Stable
-        remote = "https://github.com/S8Cloud/boringssl.git",
+        commit = "2a1660c0c8f6658746d71182d643b2f640cf4938",  # Latest Stable
+        remote = "https://boringssl.googlesource.com/boringssl",
     )
 
     if bind:
